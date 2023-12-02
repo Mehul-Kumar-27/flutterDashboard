@@ -51,7 +51,6 @@ Future searchUser(
     SearchUserEvent event, Emitter<FetchUsersState> emitter) async {
   List<User> listCurrentlly = event.currentList;
   String query = event.query;
-  print("Query: $query");
 
   final List<User> listAfterSearch = [];
 
