@@ -10,12 +10,16 @@ import 'package:admin/bloc/admin_states.dart';
 class FetchUsersBloc extends Bloc<FetchUsersEvent, FetchUsersState> {
   FetchUsersBloc() : super(FetchUsersInitial()) {
     on<GetUserEvents>(getUser);
+    on<DeleteSelectedUserEvent>(deleteUser);
+    on<SearchUserEvent>(searchUser);
   }
 }
 
 Future getUser(FetchUsersEvent event, Emitter<FetchUsersState> emitter) async {
   emitter(FetchUserLoading());
-  print("ekkhk");
+  if (kDebugMode) {
+    print("ekkhk");
+  }
 
   final UserRepository userRepository = UserRepository();
 
@@ -27,4 +31,37 @@ Future getUser(FetchUsersEvent event, Emitter<FetchUsersState> emitter) async {
   } else {
     emitter(FetchUserError());
   }
+}
+
+Future deleteUser(
+    DeleteSelectedUserEvent event, Emitter<FetchUsersState> emitter) async {
+  emitter(DeleteSelectedUserLoadingState());
+
+  List<User> listCurrentlly = event.listToShow;
+  List<User> listToDelete = event.listToDelete;
+
+  final List<User> listAfterDelete = listCurrentlly
+      .where((element) => !listToDelete.contains(element))
+      .toList();
+
+  emitter(DeleteSelectedUserSuccessState(listAfterDelete));
+}
+
+Future searchUser(
+    SearchUserEvent event, Emitter<FetchUsersState> emitter) async {
+  List<User> listCurrentlly = event.currentList;
+  String query = event.query;
+  print("Query: $query");
+
+  final List<User> listAfterSearch = [];
+
+  for (var i = 0; i < listCurrentlly.length; i++) {
+    if (listCurrentlly[i].name!.toLowerCase().contains(query.toLowerCase()) ||
+        listCurrentlly[i].email!.toLowerCase().contains(query.toLowerCase()) ||
+        listCurrentlly[i].role!.toLowerCase().contains(query.toLowerCase())) {
+      listAfterSearch.add(listCurrentlly[i]);
+    }
+  }
+
+  emitter(SearchQueryState(listAfterSearch));
 }

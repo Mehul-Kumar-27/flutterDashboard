@@ -1,13 +1,13 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
-import 'package:admin/components/headerWidget.dart';
-import 'package:admin/components/nameHeaderWidget.dart';
-import 'package:admin/components/sideSectionWidget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:admin/bloc/admin_bloc.dart';
 import 'package:admin/bloc/admin_events.dart';
 import 'package:admin/bloc/admin_states.dart';
+import 'package:admin/components/headerWidget.dart';
+import 'package:admin/components/nameHeaderWidget.dart';
+import 'package:admin/components/sideSectionWidget.dart';
 import 'package:admin/constants.dart';
 import 'package:admin/models.dart';
 
@@ -25,6 +25,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
     super.initState();
   }
 
+  List<User> origianlList = [];
   List<User> listToShow = [];
   List<User> searchList = [];
   List<User> deleteList = [];
@@ -62,6 +63,17 @@ class _AdminDashboardState extends State<AdminDashboard> {
                           listener: (context, state) {
                             if (state is FetchUserSuccess) {
                               listToShow = state.usersList;
+                              origianlList = state.usersList;
+                              searchList = state.usersList;
+                            }
+                            if (state is DeleteSelectedUserSuccessState) {
+                              listToShow = state.usersList;
+                              origianlList = state.usersList;
+                              deleteList = [];
+                            }
+                            if (state is SearchQueryState) {
+                              listToShow = state.usersList;
+                              
                             }
                           },
                           builder: (context, state) {
@@ -95,14 +107,86 @@ class _AdminDashboardState extends State<AdminDashboard> {
                                                   color: Colors.white,
                                                   fontSize: currentFont * 20),
                                             ),
-                                            IconButton(
-                                                hoverColor: backgroundColor,
-                                                onPressed: () {},
+                                            TextButton.icon(
+                                                onPressed: () {
+                                                  BlocProvider.of<
+                                                              FetchUsersBloc>(
+                                                          context)
+                                                      .add(
+                                                          DeleteSelectedUserEvent(
+                                                              listToShow:
+                                                                  listToShow,
+                                                              listToDelete:
+                                                                  deleteList));
+                                                },
                                                 icon: const Icon(
                                                   Icons.delete_forever,
                                                   color: Colors.red,
+                                                ),
+                                                label: const Text(
+                                                  "Delete Selected",
+                                                  style: TextStyle(
+                                                    color: Colors.white,
+                                                  ),
                                                 ))
                                           ],
+                                        ),
+
+                                        // Search Bar
+
+                                        Padding(
+                                          padding: EdgeInsets.only(
+                                              top: currentRatio * 10),
+                                          child: Container(
+                                            width: currentWidth * 0.4,
+                                            height: currentHeight * 0.05,
+                                            decoration: BoxDecoration(
+                                                color: backgroundColor,
+                                                borderRadius:
+                                                    BorderRadius.circular(10),
+                                                border: Border.all(
+                                                    color: Colors.white)),
+                                            child: Row(
+                                              children: [
+                                                SizedBox(
+                                                  width: currentWidth * 0.2,
+                                                  height: currentHeight * 0.05,
+                                                  child: Padding(
+                                                    padding: EdgeInsets.only(
+                                                        left: currentRatio * 10,
+                                                        bottom: currentRatio),
+                                                    child: TextField(
+                                                      textAlign:
+                                                          TextAlign.start,
+                                                      onChanged: (value) {
+                                                        BlocProvider.of<
+                                                                    FetchUsersBloc>(
+                                                                context)
+                                                            .add(SearchUserEvent(
+                                                                value,
+                                                                listToShow));
+                                                      },
+                                                      style: TextStyle(
+                                                          color: Colors.white,
+                                                          fontSize:
+                                                              currentFont * 15),
+                                                      decoration: InputDecoration(
+                                                          hintText:
+                                                              "Search by Query",
+                                                          hintStyle: TextStyle(
+                                                              color: Colors
+                                                                  .white70,
+                                                              fontSize:
+                                                                  currentFont *
+                                                                      15),
+                                                          border:
+                                                              InputBorder.none),
+                                                    ),
+                                                  ),
+                                                )
+                                              ],
+                                            ),
+                                          ),
                                         )
                                       ],
                                     ),
@@ -138,10 +222,32 @@ class _AdminDashboardState extends State<AdminDashboard> {
                                                   }
                                                 });
                                               },
+                                              onDelete: () {
+                                                setState(() {
+                                                  listToShow.remove(
+                                                      listToShow[index]);
+                                                });
+                                              },
                                             );
                                           },
-                                          itemCount: 30,
-                                        ))
+                                          itemCount: listToShow.length,
+                                        )),
+                                        Padding(
+                                          padding: EdgeInsets.only(
+                                              top: currentRatio * 5,
+                                              bottom: currentRatio * 5,
+                                              left: currentRatio * 10),
+                                          child: Row(
+                                            children: [
+                                              Text(
+                                                "${deleteList.length} row(s) selected",
+                                                style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: currentFont * 15),
+                                              )
+                                            ],
+                                          ),
+                                        )
                                       ],
                                     ),
                                   ),
@@ -168,12 +274,14 @@ class UserCard extends StatefulWidget {
   final User user;
   final bool isSelected;
   final ValueChanged<bool?> onCheckboxChanged;
+  final VoidCallback? onDelete;
 
   const UserCard({
     Key? key,
     required this.user,
     required this.isSelected,
     required this.onCheckboxChanged,
+    this.onDelete,
   }) : super(key: key);
 
   @override
@@ -181,8 +289,8 @@ class UserCard extends StatefulWidget {
 }
 
 class _UserCardState extends State<UserCard> {
-  TextEditingController _nameController = TextEditingController();
-  TextEditingController _emailController = TextEditingController();
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
 
   bool isEditing = false;
 
@@ -301,7 +409,7 @@ class _UserCardState extends State<UserCard> {
                         context: context,
                         builder: (BuildContext context) {
                           return AlertDialog(
-                            title: Text("Confirm Deletion"),
+                            title: const Text("Confirm Deletion"),
                             content: Text(
                                 "Are you sure you want to delete ${widget.user.name}?"),
                             actions: [
@@ -313,8 +421,7 @@ class _UserCardState extends State<UserCard> {
                               ),
                               TextButton(
                                 onPressed: () {
-                                  // Remove user from the listToShow
-                                  //listToShow.remove(widget.user);
+                                  widget.onDelete!();
                                   Navigator.of(context).pop();
                                 },
                                 child: Text("Confirm"),

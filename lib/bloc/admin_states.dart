@@ -13,3 +13,23 @@ class FetchUserSuccess extends FetchUsersState {
 }
 
 class FetchUserError extends FetchUsersState {}
+
+class DeleteSelectedUserLoadingState extends FetchUsersState {}
+
+class DeleteSelectedUserSuccessState extends FetchUsersState {
+  final List<User> usersList;
+
+  DeleteSelectedUserSuccessState(this.usersList);
+}
+
+class DeleteSelectedUserErrorState extends FetchUsersState {
+  final String errorMessage;
+
+  DeleteSelectedUserErrorState(this.errorMessage);
+}
+
+class SearchQueryState extends FetchUsersState {
+  final List<User> usersList;
+
+  SearchQueryState(this.usersList);
+}
