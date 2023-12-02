@@ -149,14 +149,14 @@ class _UserCardState extends State<UserCard> {
                                 onPressed: () {
                                   Navigator.of(context).pop();
                                 },
-                                child: Text("Cancel"),
+                                child: const Text("Cancel"),
                               ),
                               TextButton(
                                 onPressed: () {
                                   widget.onDelete!();
                                   Navigator.of(context).pop();
                                 },
-                                child: Text("Confirm"),
+                                child: const Text("Confirm"),
                               ),
                             ],
                           );

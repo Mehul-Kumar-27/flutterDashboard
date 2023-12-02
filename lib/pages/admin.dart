@@ -34,6 +34,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
   List<User> searchList = [];
   List<User> deleteList = [];
 
+  bool allUsersSelected = false;
+
   int totalPage = 0;
   int currentPage = 1;
 
@@ -65,6 +67,17 @@ class _AdminDashboardState extends State<AdminDashboard> {
     int start = (currentPage - 1) * 10;
     int end = min(currentPage * 10, origianlList.length);
     return origianlList.sublist(start, end);
+  }
+
+  selectAllUsers() {
+    setState(() {
+      deleteList = [];
+      for (int i = 0; i < listToShow.length; i++) {
+        setState(() {
+          deleteList.add(listToShow[i]);
+        });
+      }
+    });
   }
 
   @override
@@ -105,8 +118,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
                               listToShow = getPaginatedList();
                             }
                             if (state is DeleteSelectedUserSuccessState) {
-                              listToShow = state.usersList;
+                              // listToShow = state.usersList;
                               origianlList = state.usersList;
+                              calculatePage();
+                              setState(() {
+                                currentPage = 1;
+                                allUsersSelected = false;
+                              });
+                              listToShow = getPaginatedList();
                               deleteList = [];
                             }
                             if (state is SearchQueryState) {
@@ -125,7 +144,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                               children: [
                                 Container(
                                   width: currentWidth * 75,
-                                  height: currentHeight * 0.17,
+                                  height: currentHeight * 0.192,
                                   color: secondaryColor,
                                   child: Padding(
                                     padding: const EdgeInsets.symmetric(
@@ -139,22 +158,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
                                               MainAxisAlignment.spaceBetween,
                                           children: [
                                             Text(
-                                              "Dashboard",
+                                              "Filter Users",
                                               style: TextStyle(
                                                   color: Colors.white,
                                                   fontSize: currentFont * 20),
                                             ),
                                             TextButton.icon(
                                                 onPressed: () {
-                                                  BlocProvider.of<
-                                                              FetchUsersBloc>(
-                                                          context)
-                                                      .add(
-                                                          DeleteSelectedUserEvent(
-                                                              listToShow:
-                                                                  listToShow,
-                                                              listToDelete:
-                                                                  deleteList));
+                                                  delteSelectedMethod(context);
                                                 },
                                                 icon: const Icon(
                                                   Icons.delete_forever,
@@ -168,12 +179,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
                                                 ))
                                           ],
                                         ),
-
-                                        // Search Bar
-
                                         Padding(
                                           padding: EdgeInsets.only(
-                                              top: currentRatio * 10),
+                                              top: currentRatio * 4),
                                           child: Container(
                                             width: currentWidth * 0.4,
                                             height: currentHeight * 0.05,
@@ -252,6 +260,40 @@ class _AdminDashboardState extends State<AdminDashboard> {
                                               ],
                                             ),
                                           ),
+                                        ),
+                                        Padding(
+                                          padding: EdgeInsets.only(
+                                              top: currentRatio * 6),
+                                          child: Row(
+                                            children: [
+                                              Checkbox(
+                                                  value: allUsersSelected,
+                                                  onChanged: (value) {
+                                                    setState(() {
+                                                      allUsersSelected =
+                                                          !allUsersSelected;
+                                                    });
+                                                    if (value == true) {
+                                                      selectAllUsers();
+                                                    } else {
+                                                      setState(() {
+                                                        deleteList = [];
+                                                      });
+                                                    }
+                                                  }),
+                                              Padding(
+                                                padding: EdgeInsets.only(
+                                                    left: currentRatio * 10),
+                                                child: Text(
+                                                  "Select All",
+                                                  style: TextStyle(
+                                                      color: Colors.white,
+                                                      fontSize:
+                                                          currentFont * 15),
+                                                ),
+                                              )
+                                            ],
+                                          ),
                                         )
                                       ],
                                     ),
@@ -289,8 +331,12 @@ class _AdminDashboardState extends State<AdminDashboard> {
                                               },
                                               onDelete: () {
                                                 setState(() {
-                                                  listToShow.remove(
+                                                  origianlList.remove(
                                                       listToShow[index]);
+                                                  listToShow =
+                                                      getPaginatedList();
+
+                                                  calculatePage();
                                                 });
                                               },
                                             );
@@ -328,7 +374,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                                                         )),
                                                     Text(
                                                       "$currentPage of $totalPage",
-                                                      style: TextStyle(
+                                                      style: const TextStyle(
                                                           color: Colors.white),
                                                     ),
                                                     IconButton(
@@ -363,5 +409,32 @@ class _AdminDashboardState extends State<AdminDashboard> {
             ],
           ),
         ));
+  }
+
+  Future<dynamic> delteSelectedMethod(BuildContext context) {
+    return showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text(
+                "Are you sure you want to delete ${deleteList.length} row(s)"),
+            actions: [
+              TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: const Text("Cancel")),
+              TextButton(
+                  onPressed: () {
+                    BlocProvider.of<FetchUsersBloc>(context).add(
+                        DeleteSelectedUserEvent(
+                            listToShow: origianlList,
+                            listToDelete: deleteList));
+                    Navigator.pop(context);
+                  },
+                  child: const Text("Delete"))
+            ],
+          );
+        });
   }
 }
